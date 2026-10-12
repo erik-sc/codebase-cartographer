@@ -1,0 +1,11 @@
+{
+  "name": "codebase-cartographer",
+  "version": "0.1.0",
+  "description": "Learn and understand a codebase through a read-only agentic workflow that never hits the permission prompt: skeleton -> hypothesis -> parallel read-only sub-agents -> verified knowledge base -> retrieval-practice quizzes. Grounded in program-comprehension research.",
+  "author": { "name": "Érik S." },
+  "license": "MIT",
+  "keywords": ["onboarding", "program-comprehension", "codebase", "read-only", "knowledge-base", "learning"],
+  "skills": "./skills",
+  "agents": "./agents",
+  "hooks": "./hooks/hooks.json"
+}

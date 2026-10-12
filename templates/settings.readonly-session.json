@@ -1,0 +1,14 @@
+{
+  "$comment": "Stricter variant for a pure study session: plan mode by default (Claude can read and run read-only commands but cannot edit source), with the knowledge-base directory as the only writable path. Copy to <your-repo>/.claude/settings.local.json so it stays personal and gitignored.",
+  "permissions": {
+    "defaultMode": "plan",
+    "allow": [
+      "Read", "Glob", "Grep", "Agent",
+      "Bash(git log *)", "Bash(git show *)", "Bash(git blame *)", "Bash(git diff *)",
+      "Bash(git shortlog *)", "Bash(git ls-files *)", "Bash(git rev-parse *)", "Bash(git cat-file *)",
+      "Bash(python * repo_skeleton.py *)", "Bash(python * kb_lint.py *)",
+      "Write(./docs/codebase-knowledge/**)", "Edit(./docs/codebase-knowledge/**)"
+    ],
+    "deny": ["Bash(git push *)", "Bash(rm *)", "Read(./.env)", "Read(./.env.*)"]
+  }
+}

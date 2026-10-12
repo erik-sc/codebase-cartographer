@@ -1,0 +1,11 @@
+{
+  "name": "codebase-cartographer-marketplace",
+  "owner": { "name": "Érik S." },
+  "plugins": [
+    {
+      "name": "codebase-cartographer",
+      "source": "./",
+      "description": "Read-only agentic workflow to learn a codebase without permission prompts; builds a verified knowledge base and quizzes you on it."
+    }
+  ]
+}
