@@ -7,198 +7,137 @@ allowed-tools: Read, Grep, Glob, Agent, Bash(python ${CLAUDE_SKILL_DIR}/scripts/
 
 # Learn a codebase (read-only, no approval limbo)
 
-You are building a **knowledge base** (KB) for this repository, the way a senior
-engineer who has worked here for years would hold it in their head. The KB lives in
-`docs/codebase-knowledge/` and must survive this session: next time, Claude or a human
-starts from it instead of re-deriving everything.
+Build the **knowledge base** (KB) a senior engineer would hold in their head for this
+repository, and persist it in `<repo root>/docs/codebase-knowledge/` so the next session
+(Claude's or a human's) starts from it instead of re-deriving it.
 
 Scope for this run: **$ARGUMENTS** (empty means the whole repository).
 
-Answer the user in the language they are writing in. Write the KB files in that same
-language, but keep identifiers, paths and quoted code verbatim.
+The design follows the program-comprehension literature (hypothesis-first reading,
+concept location, systematic tracing, rationale from history, evidence on every claim);
+read [references/research-brief.md](references/research-brief.md) only if you want
+the reasons. Everything below is read-only except writes inside `docs/codebase-knowledge/`;
+the sub-agents have only Read/Grep/Glob (plus read-only git for `historian`/`verifier`)
+and run with `permissionMode: dontAsk`, so nothing here waits on an approval. If a Write
+to the KB is denied, print the files in chat under one heading each and point the user
+to `templates/settings.project.json`; never write via Bash.
 
-## Why this workflow is shaped the way it is
+Answer the user in their language and write the KB in it, keeping identifiers, paths and
+quoted code verbatim.
 
-Four decades of program-comprehension research (see [references/research-brief.md](references/research-brief.md))
-converge on a few facts that this skill is built around:
+## Non-negotiable rules
 
-- Comprehension is **~58% of developer time** (Xia et al. 2018) and seniors spend far less
-  because they already hold the map. A persisted, verified KB emulates seniority.
-- Experts read **top-down, hypothesis-first**, looking for *beacons* that confirm or refute
-  a guess (Brooks 1983), and they chunk code into known *plans* and conventions
-  (Soloway & Ehrlich 1984). Linear file-by-file reading is what novices do.
-- The hardest, most-deferred questions are about **rationale ("why?") and behaviour
-  under conditions**, and the only source is usually history or a missing colleague
-  (Ko et al. 2007; LaToza & Myers 2010). Code alone does not answer them; git does.
-- Readers who **trace interactions systematically** succeed at change tasks; as-needed
-  skimmers miss non-local effects (Littman et al. 1986; Robillard et al. 2004).
-- For LLM agents, the winning pattern is **skeleton first, then hierarchical
-  localization** (repo -> dir -> file -> symbol), sub-agents with fresh context that return
-  distilled summaries, and notes persisted outside the context window
-  (Agentless 2024; RepoUnderstander 2024; Anthropic context-engineering guidance).
-  Over-reading is the dominant token cost, and long contexts rot.
-- Every claim needs **file:line evidence**, because fluent but unverified prose costs
-  the reader more verification time than it saves (Mozannar et al. 2024).
+- **Evidence or silence.** Every factual sentence cites `path:line`, `path:a-b` or
+  `commit sha` that you or a sub-agent saw this session. Unverified expectations are
+  marked `(unverified)`. A wrong line number is worse than no KB.
+- **Full paths everywhere, including inside tables.** Abbreviating
+  `apps/web/src/server/http.ts:87` to `http.ts:87` is the single most common way to
+  break the linter. Paths are relative to the repo root, no `./`.
+- **When two sub-agents disagree, grep it yourself.** Do not average or hedge.
+- **Budget your own reading.** Delegate anything wider than ~10 tool calls or ~8 files.
+  Grep for the symbol and read a 40-80 line window; do not open whole files.
+- **Keep the KB layout stable** (file names, section order) so `git diff` on it shows
+  how understanding changed. When updating an existing KB, edit in place.
+- **No edits outside `docs/codebase-knowledge/`, no builds, tests or network.** If
+  running something would answer a question, log the exact command in `90-questions.md`.
 
-## Zero-prompt contract
+## Phase 0: Reuse what exists
 
-Everything here is read-only except writing into `docs/codebase-knowledge/`.
-Read, Grep, Glob and the `Agent` tool never prompt. The sub-agents you spawn
-(`cartographer`, `historian`, `tracer`, `verifier`) are restricted to read-only tools and
-run with `permissionMode: dontAsk`, so a stray write attempt is denied instead of
-hanging on an approval. Git read commands are in Claude Code's built-in read-only set.
+If `docs/codebase-knowledge/INDEX.md` exists, read it and `90-questions.md`; treat
+recorded facts as hypotheses to spot-check and jump to whatever the open questions
+point at. Read `README*`, `CLAUDE.md`, `AGENTS.md`, `CONTRIBUTING*`, `docs/adr*/**`
+if present: that is the *intended* architecture; the code is the *implemented* one,
+and disagreements become questions.
 
-If a `Write` to `docs/codebase-knowledge/` is denied (the project has not been trusted
-yet), do not fight it: print the KB content in the chat under a heading per file and tell
-the user to copy the project settings from the cartographer templates. Never fall back to
-Bash to write files.
+## Phase 1: Skeleton, hypothesis, beacons
 
-## Phases
-
-Work through these in order. Each phase ends with something written to the KB, so a
-session that is interrupted still leaves value behind. Keep your own context small: do
-not paste whole files into your reasoning. Delegate breadth to sub-agents and keep only
-their summaries.
-
-### Phase 0: Reuse what exists (2 minutes)
-
-1. If `docs/codebase-knowledge/INDEX.md` exists, read it and `90-questions.md`. Treat
-   recorded facts as hypotheses to spot-check, not truths: the code may have moved.
-   Then skip to the phase that the open questions point at.
-2. Read `README*`, `CLAUDE.md`, `AGENTS.md`, `CONTRIBUTING*`, `docs/adr*/**`,
-   `docs/architecture*` if present. These are *intended* architecture; the code is the
-   *implemented* one. Note disagreements as questions.
-
-### Phase 1: Skeleton and hypothesis (5 minutes)
-
-Run the bundled inventory script. It is pure Python, read-only, and prints a budgeted
-repo map (file tree, languages, size, entry-point beacons, top-referenced symbols via a
-simple PageRank over the import graph, churn and ownership from git):
+Run the inventory script, passing the repo root explicitly (the cwd may be elsewhere):
 
 ```
-python ${CLAUDE_SKILL_DIR}/scripts/repo_skeleton.py . --budget 6000
+python ${CLAUDE_SKILL_DIR}/scripts/repo_skeleton.py <repo root> --budget 6000
 ```
 
-Use `--area <path>` to restrict it when the scope is a sub-tree. If Python is not
-available, ask the `cartographer` agent to produce the same sections by hand.
+Add `--area <subpath>` when the scope is a sub-tree. If Python is missing, ask a
+`cartographer` to produce the same sections (shape, beacons, central files, history).
 
-From the skeleton, write down **one architectural hypothesis** in a sentence
-("Django monolith with Celery workers and a React SPA in /web") and the 3-5 **beacons**
-you expect to find if it is true (settings module, URL router, task queue config, SPA
-build entry). Confirm or refute each beacon with one Grep/Glob each. Revise the
-hypothesis until the beacons agree with it.
+From the skeleton write one architectural hypothesis in a sentence and the 3-5
+beacons it predicts (router, settings module, queue config, build entry...), plus one
+beacon that would *refute* it. Confirm each with one Grep/Glob; revise until they agree.
 
-Write `00-overview.md` now: hypothesis, beacons with evidence, how to build/run/test
-(only what you verified in config files; mark anything untested as "unverified").
+Write `00-overview.md` now (template in [references/kb-template.md](references/kb-template.md)):
+hypothesis, beacon table with evidence, build/run/test facts taken only from config
+files (`package.json` scripts, Makefile, CI workflow), each marked "verified in <path>"
+or "(unverified)". Entry points come from the skeleton's beacons and the top-ranked files.
 
-### Phase 2: Fan out to sub-agents (parallel)
+## Phase 2: One fan-out, in a single message
 
-Spawn these in **one message** so they run concurrently. Give each a hard budget
-("at most 25 tool calls") and demand a summary under 1,500 words with `path:line`
-evidence for every claim. Scale the number of cartographers to the repo: one per major
-subsystem the skeleton revealed, at most six.
+Spawn every sub-agent at once; the skeleton already gives you the subsystems and the
+entry points, so there is no reason to wait for cartographers before tracing. Give each
+a hard budget ("at most 25 tool calls"), the repo root as an absolute path, and the
+rule "full paths, `path:line` on every claim, report under 1,500 words".
 
-- `cartographer` x N: one per subsystem. Task: module responsibilities, public
-  surface, key types, dependencies in/out, conventions observed, violations of those
-  conventions, anything that looks like dead or legacy code.
-- `historian` x 1: Task: why the code is shaped this way. Mine `git log`, `git shortlog`,
-  ADRs, changelogs: founding commits, big rewrites, hotspots (high churn), ownership
-  concentration (files with a single author), recent activity, and rationale found in
-  commit messages or PR-style messages. Label inferred rationale as inferred.
-- `cartographer` x 1 for cross-cutting concerns: config and env loading, logging,
-  error handling, auth, feature flags, i18n, testing strategy and fixtures.
+- `cartographer` x one per major subsystem (at most six) and one for cross-cutting
+  concerns (config/env, logging, errors, auth, flags, test fixtures). Ask for:
+  responsibility, public surface, dependencies in/out, conventions, violations,
+  probable dead code.
+- `tracer` x 2-4 flows: the main entry point, the most-churned feature from the
+  skeleton, and whatever `$ARGUMENTS` names. Give each the trigger's `path:line`.
+- `historian` x 1 **only if the skeleton shows more than ~50 commits or more than one
+  author**. Otherwise do history inline with `git log --oneline`, `git shortlog -sn`
+  and `git show <sha> --stat` for the handful of commits that matter. Ask for:
+  timeline of structural decisions, hotspots, ownership concentration, documented vs
+  inferred rationale, abandoned approaches.
 
-While they run, draft the glossary (Phase 3) from the skeleton's identifiers.
+While they run, draft the glossary (Phase 3) from the identifiers in the skeleton.
 
-### Phase 3: Glossary of domain concepts (concept location)
+## Phase 3: Glossary (concept location)
 
-Comprehension is concept location (Rajlich & Wilde 2002): the mapping from domain
-vocabulary to code is the index everything else hangs on. Build `10-glossary.md`:
+`10-glossary.md`: `| Concept | Meaning here | Where (full path:line) | Aliases in code | Notes |`.
+Seed from README nouns, entity/table names, route names, UI strings, test names,
+event/queue names. When a domain word has no hits, grep synonyms, abbreviations,
+singular/plural before concluding it is absent. Flag two-names-one-thing and
+one-name-two-things under "Naming hazards": that is where newcomers get lost.
 
-| Concept | Meaning in this project | Where it lives (path:line) | Synonyms / aliases in code |
+## Phase 4: Merge into the KB
 
-Seed it from: README nouns, model/entity/table names, route names, UI strings, test
-names, event/queue names. Expect your first search cue to fail (Ko et al. 2006): when
-a domain word has no hits, grep for synonyms, abbreviations, and the plural/singular.
-Flag concepts with **two names for one thing** or **one name for two things**; those
-are the places newcomers get lost.
+From the sub-agent reports write, in this order:
 
-### Phase 4: Structural and behavioural maps
+- `20-architecture.md`: layers, dependency direction, module table (responsibility,
+  public surface, depends on / depended on by, evidence), data stores and external
+  services, boundaries, and "where implemented differs from documented".
+- `30-flows/<slug>.md`, one per traced flow: numbered steps with `path:line` for the
+  call site and the definition, shared hops with caller counts, state touched, failure
+  handling, tests found (or the greps that found none).
+- `40-history.md`: timeline, hotspots (use the skeleton's window; say "repo is N days
+  old" when churn is meaningless), ownership concentration, candidate ADRs marked
+  "inferred, not documented".
+- `50-conventions.md`: naming, layering rules, error handling, testing, config/flags,
+  and an "observed violations" table with a bug-or-intent verdict per row.
+- `90-questions.md`: `| # | Question | Conjecture | Status | Evidence |`. Status is
+  `open`, `verified (code)`, `verified (documented)` or `refuted`. Seed from
+  [references/question-catalog.md](references/question-catalog.md); close what you
+  can, leave the rest with your best conjecture.
 
-Merge the sub-agent summaries into two separate artefacts (Pennington 1987: readers
-hold a *program model* and a *situation model*; both are needed):
+## Phase 5: Verify
 
-- `20-architecture.md`: the structural map. Layers, modules, dependency direction,
-  data stores, external services, boundaries. Keep the layout stable across runs so it
-  can be diffed (Kuhn et al. 2010: a consistent map beats a pretty one).
-- `30-flows/<name>.md`: one file per important end-to-end behaviour (a request, a job,
-  a CLI command, startup). Write them as numbered steps, each with `path:line`. Trace
-  callers and callees systematically rather than stopping at the first plausible
-  function (Littman et al. 1986). Use the `tracer` agent for each flow, in parallel.
-  Pick 2-4 flows for a first pass: the main entry point, the most-churned feature, and
-  whatever `$ARGUMENTS` asks for.
+1. Run the linter and fix everything it reports, then re-run until clean:
+   ```
+   python ${CLAUDE_SKILL_DIR}/scripts/kb_lint.py <repo root>
+   ```
+2. List the 8-12 load-bearing claims (architecture statements, bug or violation
+   verdicts, "there is no X", the first three hops of each flow) and hand exactly that
+   list to one `verifier` agent with the KB path. It checks whether the cited lines
+   actually support each claim, which the linter cannot. Fix or delete what it flags.
 
-### Phase 5: History, conventions, ownership
+## Phase 6: Index and hand-off
 
-From the historian's report write:
+Write `INDEX.md` (under 60 lines): one paragraph on what the system is, the verified
+hypothesis, links to every KB file, the five things a newcomer would not guess from the
+code (each with evidence), and the top three open questions.
 
-- `40-history.md`: timeline of structural decisions, hotspots, candidate ADRs for
-  rationale you reconstructed (clearly marked "inferred, not documented"), and the
-  **truck-factor map**: which areas are known by one person. These are where the only
-  knowledge is the code and the history, so they deserve the most careful notes.
-- `50-conventions.md`: the project's local "plans": naming, layering rules, error
-  handling idiom, test structure, commit style, how feature flags or migrations are
-  done. Include observed violations; each one is either a bug or hidden intent.
+Report to the user: 3-6 bullets of what you now know with confidence, what is still
+uncertain and why, the KB files written, and two suggestions: add
+`@docs/codebase-knowledge/INDEX.md` to `CLAUDE.md`, and run `/quiz-me` to internalise it.
 
-### Phase 6: Question log and self-test
-
-Open questions are the engine of comprehension (Letovsky 1987: question -> conjecture
--> verification). Maintain `90-questions.md` as a table:
-
-| # | Question | Conjecture | Status (open / verified / refuted) | Evidence |
-
-Seed it from [references/question-catalog.md](references/question-catalog.md), which
-adapts Sillito et al.'s 44 question types and LaToza & Myers's hard questions. Close
-what you can now; leave the rest open with your best conjecture so the next session
-starts there.
-
-Then self-test: pick five entries from the glossary and five steps from a flow, and
-check, from the KB alone, whether you could locate each symbol. Spawn the `verifier`
-agent on the KB directory: it checks that every `path:line` reference exists and that
-the referenced line plausibly supports the claim. Fix or delete anything it flags.
-A KB with a wrong line number is worse than no KB.
-
-### Phase 7: Index and hand-off
-
-Write `INDEX.md` (under 60 lines): one paragraph on what the system is, the
-hypothesis, links to the other files, the five most important things a newcomer
-would not guess from the code, and the top three open questions.
-
-Finish with a short report to the user in the chat:
-- what you now know with confidence (3-6 bullets),
-- what is still uncertain and why,
-- the list of KB files written,
-- a suggestion to add `@docs/codebase-knowledge/INDEX.md` to `CLAUDE.md` so future
-  sessions load the summary, and to run `/quiz-me` if they want to internalise it.
-
-## Guard rails
-
-- **Evidence or silence.** Never assert a symbol, path, API or call edge you have not
-  seen in a tool result this session. If you are summarising a sub-agent, keep its
-  evidence citations.
-- **Budget the reading.** If you find yourself opening the 30th file by hand, stop and
-  delegate to a sub-agent with a precise question. Read-ops are where agents burn
-  their context.
-- **Prefer symbol search over file reading.** Grep for `def name|class Name|function name`
-  and read the window around the hit, not the whole file.
-- **Verify intended vs implemented.** Docs lie by omission; say so in the KB when
-  they do, with the evidence.
-- **Keep it stable.** When updating an existing KB, edit in place and keep the file
-  layout and section order so diffs show what actually changed in understanding.
-- **Do not touch anything else.** No edits outside `docs/codebase-knowledge/`, no
-  builds, no test runs, no network. If running something would answer a question,
-  write the question down with the exact command the user could run.
-
-See [references/kb-template.md](references/kb-template.md) for the exact file layout and
-section headings, and [references/reading-strategies.md](references/reading-strategies.md)
-when you are stuck on how to approach a confusing area.
+See [references/reading-strategies.md](references/reading-strategies.md) when an area
+resists understanding.

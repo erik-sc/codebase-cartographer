@@ -137,8 +137,17 @@ agents/             cartographer, historian, tracer, verifier
 hooks/              hooks.json, allow_readonly.py
 templates/          settings.project.json, settings.readonly-session.json, CLAUDE.md.snippet
 install.ps1 / .sh   instaladores
+examples/           KB real gerada num run de teste (memeline), com métricas
 RESEARCH.md         pesquisa e referências
 ```
+
+## Validação feita
+
+Um run ponta a ponta numa cópia do `memeline` produziu uma KB de 715 linhas com 859
+citações válidas, zero prompts de permissão e três bugs plausíveis encontrados de
+passagem; veja [examples/README.md](examples/README.md). A crítica do agente testador
+ao SKILL.md original (preâmbulo inútil para o modelo, dois fan-outs serializados,
+historian/verifier incondicionais, caminhos abreviados em tabelas) foi incorporada.
 
 ## Limitações conhecidas
 

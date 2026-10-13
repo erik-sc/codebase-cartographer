@@ -26,7 +26,9 @@ Every factual sentence carries at least one citation in this exact form so that 
 - `commit abc1234` for history
 - `(unverified)` when you could not find evidence and are stating an expectation
 
-Relative paths from the repository root. No `./` prefix.
+Relative paths from the repository root, no `./` prefix, and **always the full path, even
+inside table cells**: `http.ts:87` instead of `apps/web/src/server/http.ts:87` is what
+breaks the linter most often.
 
 ## INDEX.md
 
@@ -104,7 +106,7 @@ Trigger: <what starts it> (path:line)
 # History and ownership
 ## Timeline of structural decisions
 | When | What | Why (documented / inferred) | Evidence (commit) |
-## Hotspots (churn)
+## Hotspots (churn; say "repo is N days old" when churn is meaningless)
 ## Ownership concentration (truck factor)
 | Area | Main author(s) | Risk |
 ## Candidate ADRs (inferred, not documented)
@@ -129,3 +131,5 @@ Trigger: <what starts it> (path:line)
 # Question log
 | # | Question | Conjecture | Status | Evidence |
 ```
+
+Status values: `open`, `verified (code)`, `verified (documented)`, `refuted`.

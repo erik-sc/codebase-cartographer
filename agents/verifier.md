@@ -16,7 +16,8 @@ the wrong parts.
 1. If Python is available, run the bundled linter first (it is read-only):
    `python <skill dir>/scripts/kb_lint.py <repo root>`; the caller tells you the
    skill directory. Report its output verbatim.
-2. Then sample by hand: for every KB file, pick the 5-8 most consequential claims
+2. The caller normally hands you a list of 8-12 load-bearing claims; check exactly
+   those. Without a list, pick the 5-8 most consequential claims per KB file
    (architecture statements, flow steps, "X calls Y", "there is no Z"). For each:
    - open the cited `path:line` with Read (a 10-line window),
    - decide: SUPPORTED / PARTIAL / NOT SUPPORTED / BROKEN LINK,
