@@ -41,7 +41,7 @@ adição de `curation-queue.ts` (commit 67d9114).
 
 | Area | Main author(s) | Risk |
 |---|---|---|
-| Todo o repositório | Érik S. (10 de 10 commits, `git shortlog -sn`) | Truck factor 1 em tudo. O que mitiga é a densidade das mensagens de commit e dos comentários em prosa (`CLAUDE.md:59`). |
+| Todo o repositório | Érik S. (10 de 10 commits, `git shortlog -sn`) | Truck factor 1 em tudo. O que mitiga é a densidade das mensagens de commit e dos comentários em prosa (`CLAUDE.md:61`). |
 | `apps/web/src/components/Memeline.tsx` | Érik S. | 936 linhas, 4 commits, muitos detalhes de timing de render documentados só em commits 54ce7c5 e 74981ee |
 | `packages/ingest/src/peak.ts` | Érik S. | heurísticas de pico (ressurgimento, artigo tardio, pré-2015) com 1 commit; a razão está em comentários e em `docs/PLANO.md` §5.4 (`packages/ingest/src/peak.ts:214`) |
 
@@ -57,7 +57,7 @@ o que precisou de reconstrução.
    (commit 3069964). *Inferido:* a escolha de stateless parece motivada por não ter
    banco no MVP 1; nenhum commit diz isso explicitamente.
 2. **Core publicado como TypeScript cru, sem build.** Documentado em commit 72e51eb e
-   `CLAUDE.md:57-58`. Consequência: todos os workspaces precisam de
+   `CLAUDE.md:59-60`. Consequência: todos os workspaces precisam de
    `allowImportingTsExtensions` (`tsconfig.base.json`, commit 72e51eb).
 3. **Dia do puzzle = dia local do cliente com janela ±1 em torno do UTC.** Documentado
    em commit 54ce7c5 ("como no Wordle"). *Inferido:* a janela de ±1 é um compromisso

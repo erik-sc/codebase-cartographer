@@ -8,7 +8,7 @@ gatilhos: Enter/Espaço (`apps/web/src/components/Memeline.tsx:623`) e clique no
 Confiança: alta.
 
 1. Arraste: `onPointerDown` (`apps/web/src/components/Memeline.tsx:502`); `onMove` (`apps/web/src/components/Memeline.tsx:522`) arma o slot mais próximo com `nearestSlot` (`apps/web/src/components/Memeline.tsx:463`); `onEnd` (`apps/web/src/components/Memeline.tsx:534`) lê `armedRef.current`, chama `setPlaying(true)` e `commitRef.current(target)` (`apps/web/src/components/Memeline.tsx:558`). O ref aponta para o `commit` mais recente (`apps/web/src/components/Memeline.tsx:407-410`).
-2. `commit(index)` — `apps/web/src/components/Memeline.tsx:325`. Não faz nada se `busyRef`, `busy`, `!core` ou `!current` (`apps/web/src/components/Memeline.tsx:326`); liga `setBusyBoth(true)` (`apps/web/src/components/Memeline.tsx:320`).
+2. `commit(index)` — `apps/web/src/components/Memeline.tsx:325`. Não faz nada se `busyRef`, `busy`, `!core` ou `!current` (`apps/web/src/components/Memeline.tsx:326`); liga `setBusyBoth(true)` (`apps/web/src/components/Memeline.tsx:327`; definição em `apps/web/src/components/Memeline.tsx:320`).
 3. `fetch("/api/play/move", POST, {token: core.token, index})` — `apps/web/src/components/Memeline.tsx:331-335` → `POST` em `apps/web/src/app/api/play/move/route.ts:17` (`runtime = "nodejs"`, `dynamic = "force-dynamic"`, `apps/web/src/app/api/play/move/route.ts:14-15`).
 4. Rate limit — `apps/web/src/app/api/play/move/route.ts:18` → `apps/web/src/server/rate-limit.ts:37`: janela deslizante em memória, 90 hits / 60 s por chave (`callerKey`, `apps/web/src/server/rate-limit.ts:27`); `sweep` limpa no máximo uma vez por janela (`apps/web/src/server/rate-limit.ts:16`). Estouro → `fail(..., 429)` (`apps/web/src/server/http.ts:34`).
 5. `readBody` — `apps/web/src/app/api/play/move/route.ts:20` → `apps/web/src/server/http.ts:14`; JSON inválido vira `{}`.
@@ -43,7 +43,7 @@ Confiança: alta.
 ## Failure handling
 
 - 429 rate limit (`apps/web/src/app/api/play/move/route.ts:18`); `SessionError` → 401 (`apps/web/src/server/http.ts:46`); `PlayError` → 400/409 (`apps/web/src/server/http.ts:45`); mensagem `[core]` → 501 com `console.error` (`apps/web/src/server/http.ts:49-51`; na prática as guardas de `applyMove` não disparam porque `applyPlayerMove` valida antes); `[pool] carta ... não existe` de `requireCard` (`apps/web/src/server/pool.ts:86`) → 500 genérico (`apps/web/src/server/http.ts:53-54`). Nenhuma stack vai ao cliente.
-- Cliente: `!res.ok` ou exceção caem em `reportError`, que liga `setPlaying(false)` e desliga `busy` (`apps/web/src/components/Memeline.tsx:338-341`, `apps/web/src/components/Memeline.tsx:399-401`). Sem retry.
+- Cliente: `!res.ok` ou exceção caem em `reportError`, que seta erro/status e `setPlaying(false)` (`apps/web/src/components/Memeline.tsx:308-318`); quem desliga `busy` é o chamador, com `setBusyBoth(false)` (`apps/web/src/components/Memeline.tsx:340`, `apps/web/src/components/Memeline.tsx:399-401`). Sem retry.
 - `progress.ts` engole exceções de `localStorage` (`apps/web/src/lib/progress.ts:96-99`, `apps/web/src/lib/progress.ts:106-108`).
 - Clipboard engole permissão negada e mostra "copiado" (`apps/web/src/components/Scorecard.tsx:56-60`).
 

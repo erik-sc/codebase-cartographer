@@ -87,7 +87,7 @@ Dentro de `apps/web`:
   (`packages/ingest/src/pageviews.ts:17`), Commons API (`packages/ingest/src/commons.ts:24`).
   Pacing por host em `packages/ingest/src/config.ts:42-48`; `User-Agent` em
   `packages/ingest/src/config.ts:19`.
-- **Env vars:** só quatro leituras no repo: `MEMELINE_SESSION_SECRET`
+- **Env vars:** só quatro leituras diretas no repo (mais um spread de `process.env` em `tools/build-web.mjs:18`): `MEMELINE_SESSION_SECRET`
   (`apps/web/src/server/session.ts:28`), `NODE_ENV` (`apps/web/src/server/session.ts:30`),
   `NEXT_DIST_DIR` (`apps/web/next.config.ts:19`), `PORT` (`tools/serve.mjs:9`).
 
@@ -103,7 +103,7 @@ Dentro de `apps/web`:
 - **Seam ingest ↔ web:** a "troca de uma linha" de `seed.us.json` por `out/pool.us.json`
   (`apps/web/src/server/pool.ts:8`). Sem teste de contrato entre o JSON gerado e `MemeCard`.
 - **Seam servidor ↔ cliente:** os marcadores de acerto por carta (`marks`) existem só no
-  cliente (`apps/web/src/lib/progress.ts:29`), porque `GameState` não liga `results` a
+  cliente (`apps/web/src/lib/progress.ts:38`), porque `GameState` não liga `results` a
   `placedIds` (`packages/core/src/types.ts:117-123`).
 - **Utilitários de mês duplicados:** `packages/ingest/src/util/month.ts:4-9` reimplementa
   `monthStamp` alegando que o core "ainda lança 'não implementado'", o que já não é verdade;
@@ -121,4 +121,4 @@ Dentro de `apps/web`:
 | `packages/core/src/index.ts:4-7`, `apps/web/src/app/page.tsx:21-22`, `packages/ingest/src/util/month.ts:7`, `apps/web/src/server/http.ts:40-51`: core "pendente"/"não implementado" | Core totalmente implementado; o mapeamento `[core]` → 501 agora captura violações de invariante | `packages/core/src/index.ts:149`, `packages/core/src/index.ts:203`, `packages/core/src/index.ts:409` |
 | `packages/ingest/src/cli/curation-queue.ts:11-14`: resgatar os memes pré-2015 | `CURÁVEL` não inclui `flag:series-edge`, que é o sintoma de pré-2015 | `packages/ingest/src/cli/curation-queue.ts:77-86`, `packages/ingest/src/pool.ts:45-54`, `packages/ingest/src/peak.ts:358-367` |
 | `docs/PLANO.md:222`: PostHog para feature flags | Nenhum uso no código | grep `posthog` vazio em `*.ts/tsx/mjs` |
-| `packages/ingest/src/config.ts:36-42`: comentário cita 120 ms | Padrão real `REQUEST_INTERVAL_MS = 150` | `packages/ingest/src/config.ts:42-48` |
+| `packages/ingest/src/config.ts:37-38`: comentário registra que 120 ms deu HTTP 429 e que 400 ms passa | Código concorda: wikis usam 400 em `HOST_INTERVAL_MS` (`packages/ingest/src/config.ts:44-46`); o comentário só não explica o padrão genérico de 150 (`packages/ingest/src/config.ts:42`) | não é discrepância |

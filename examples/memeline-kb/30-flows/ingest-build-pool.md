@@ -1,7 +1,7 @@
 # Flow: ingest build-pool (candidatos → pool.<locale>.json + auditoria)
 
 Trigger: `npm run build-pool` em `packages/ingest`, que roda
-`node --experimental-strip-types src/cli/build-pool.ts` (`packages/ingest/package.json:12`).
+`node --experimental-strip-types src/cli/build-pool.ts` (`packages/ingest/package.json:11`).
 O script é ESM com top-level await, sem `main()`; a execução começa em
 `packages/ingest/src/cli/build-pool.ts:32`.
 
@@ -28,7 +28,7 @@ Confiança: alta (todos os hops lidos; nada executado).
 
 - `candidates.ts`: `listCandidates` por categoria ou `listCandidatesFromWikidata` (`packages/ingest/src/wikipedia.ts:98` / `packages/ingest/src/wikipedia.ts:145`), escolhidos com `--source category|wikidata|both`; escreve `out/candidates.<locale>.json` (`packages/ingest/src/cli/candidates.ts:47-54`).
 - `peaks.ts`: só diagnóstico, não escreve arquivo; lê `out/candidates.<locale>.json` (`packages/ingest/src/cli/peaks.ts:36-37`) e roda `fetchMonthlySeries` (`packages/ingest/src/cli/peaks.ts:47`) → `detectPeak` (`packages/ingest/src/cli/peaks.ts:50`).
-- `curation-queue.ts`: lê `out/pool.<locale>.audit.json` (`packages/ingest/src/cli/curation-queue.ts:112-115`), filtra rejeições em `CURÁVEL` (`packages/ingest/src/cli/curation-queue.ts:78-87`), ordena por `priority()` (`packages/ingest/src/cli/curation-queue.ts:101`) e escreve `out/curation-queue.<locale>.json` (`packages/ingest/src/cli/curation-queue.ts:142-157`). Não usa `args.ts`: locale vem de `process.argv[2]` (`packages/ingest/src/cli/curation-queue.ts:110`).
+- `curation-queue.ts`: lê `out/pool.<locale>.audit.json` (`packages/ingest/src/cli/curation-queue.ts:112-115`), filtra rejeições em `CURÁVEL` (`packages/ingest/src/cli/curation-queue.ts:77-86`), ordena por `priority()` (`packages/ingest/src/cli/curation-queue.ts:101`) e escreve `out/curation-queue.<locale>.json` (`packages/ingest/src/cli/curation-queue.ts:142-157`). Não usa `args.ts`: locale vem de `process.argv[2]` (`packages/ingest/src/cli/curation-queue.ts:110`).
 - Cadeia real: `candidates → build-pool → curation-queue`; `peaks` é ramo lateral.
 - Consumidor: `apps/web/src/server/pool.ts:8-20` ainda importa `@/data/seed.us.json`; `out/pool.us.json` é o alvo futuro ("troca de uma linha", `apps/web/src/server/pool.ts:8`).
 

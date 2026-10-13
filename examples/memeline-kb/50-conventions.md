@@ -7,7 +7,7 @@
   (`apps/web/src/server/pool.ts:63-65`), `[api]` (`apps/web/src/server/http.ts:50`),
   `[page]` (`apps/web/src/app/page.tsx:24`), `[session]` (`apps/web/src/server/session.ts:32-35`).
 - Comentários longos em pt-BR explicando o porquê, citando `PLANO §x.y` e "regra de ouro nº N"
-  (`CLAUDE.md:59`; ex. `packages/ingest/src/pool.ts:107`, `packages/ingest/src/peak.ts:214`).
+  (`CLAUDE.md:61`; ex. `packages/ingest/src/pool.ts:107`, `packages/ingest/src/peak.ts:214`).
 - Variáveis locais misturam português e inglês (`cabeDepoisDoAnterior`,
   `packages/core/src/index.ts:122`); helpers de teste em português (`carta`, `acervo`,
   `deckDe`, `congelar`, `packages/core/src/game.test.ts:7-42`; `alvo`,
@@ -117,6 +117,6 @@
 | `packages/ingest/src/pool.ts:151-159` vs `:191` | Audit de `fetch-error` usa slug do título pedido; caminho normal usa slug canônico | Mesmo meme com slugs diferentes entre rodadas |
 | `packages/ingest/src/util/month.ts:4-9`, `:21` | Duplica `monthStamp`; `stamp % 12` diverge do core para negativos | Legado; comentário obsoleto |
 | `tools/fetch-images.mjs:2`, `:17`, `:20`, `:30-32` | `User-Agent` `MemelineMock`/`example.org` fora da política de `packages/ingest/src/config.ts:19-20`; comentário diz 360px, código 260; `console.log("FALHA")` em vez de `console.error` | Script de protótipo |
-| `apps/web/package.json:21` vs `packages/core/package.json:15` | Vitest `^3.2.7` no web e `^2.1.8` nos pacotes | Inconsistência de versão |
+| `apps/web/package.json:23` vs `packages/core/package.json:17` | Vitest `^3.2.7` no web e `^2.1.8` nos pacotes | Inconsistência de versão |
 | `packages/core/src/index.ts:4-7`, `apps/web/src/app/page.tsx:21-22` | Comentários dizem que o core está "pendente" | Obsoletos |
 | `apps/web/src/server/session.ts:111`, `apps/web/src/components/Flag.tsx:24`, `packages/ingest/src/util/http.ts:126`, `packages/core/src/types.ts:76` (`difficulty`), `packages/core/src/index.ts:301` (`recentIds`) | Exportados/definidos sem nenhum uso | Possível código morto |

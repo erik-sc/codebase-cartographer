@@ -36,17 +36,17 @@ Só o que os manifests declaram; nada foi executado nesta sessão.
 
 | Comando | O que faz | Status |
 |---|---|---|
-| `npm install` | instala os workspaces (`packages/*`, `apps/*`) na raiz | verificado em `package.json:6-9`; "pnpm NÃO está instalado" em `CLAUDE.md:48` |
+| `npm install` | instala os workspaces (`packages/*`, `apps/*`) na raiz | verificado em `package.json:6-9`; "pnpm NÃO está instalado" em `CLAUDE.md:49` |
 | `npm test` | `vitest run` em cada workspace com script `test` | verificado em `package.json:15`, `packages/core/package.json:12`, `packages/ingest/package.json:7`, `apps/web/package.json:10` (unverified: se todos passam) |
 | `npm run typecheck` | `tsc --noEmit` em todos | verificado em `package.json:16` |
 | `npm run dev` | `next dev` em `apps/web`, escreve em `.next/` | verificado em `package.json:17`, `apps/web/package.json:6`; nota sobre `.next/` em `CLAUDE.md:63-65` |
 | `npm run build` (web) | roda `tools/build-web.mjs`, que faz `next build` em `.next-prod/` | verificado em `apps/web/package.json:7`, `tools/build-web.mjs:1-20` (unverified: conteúdo exato do script não lido) |
-| `npm run docs` | `node tools/serve.mjs`, serve `docs/` em `http://localhost:5173` | verificado em `package.json:18`, `CLAUDE.md:51` |
+| `npm run docs` | `node tools/serve.mjs`, serve `docs/` em `http://localhost:5173` | verificado em `package.json:18`, `CLAUDE.md:53` |
 | `npm run candidates` / `peaks` / `build-pool` / `curation-queue` (em `packages/ingest`) | CLIs do pipeline via `node --experimental-strip-types` | verificado em `packages/ingest/package.json:9-12` |
 
-Requisitos: Node `>=20` (`package.json:10-12`); `CLAUDE.md:57-58` diz que Node 23 roda
+Requisitos: Node `>=20` (`package.json:10-12`); `CLAUDE.md:59-60` diz que Node 23 roda
 TypeScript direto. Vitest está em versões diferentes: `^2.1.8` em core/ingest
-(`packages/core/package.json:15`) e `^3.2.7` em web (`apps/web/package.json:21`).
+(`packages/core/package.json:17`) e `^3.2.7` em web (`apps/web/package.json:23`).
 
 ## Entry points
 
