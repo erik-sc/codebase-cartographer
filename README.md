@@ -58,7 +58,7 @@ Se você quiser uma sessão de estudo ainda mais estrita, use
 **Como plugin (recomendado):**
 
 ```bash
-claude plugin marketplace add C:/Users/eriks/Documents/projetos/codebase-cartographer
+claude plugin marketplace add erik-sc/codebase-cartographer
 ```
 
 ```bash
